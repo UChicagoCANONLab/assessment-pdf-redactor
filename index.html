@@ -43,6 +43,9 @@
     var o_pdf = new jsPDF();
     var inches = 1;
     var save_name;
+    var loading_percent = 0;
+    var percent_increment = 0;
+    var percent_obj = document.getElementById('wait_time');
 
     document.getElementById('redact_button').onclick = function() {
       inches = document.getElementById('inches_input').value;
@@ -75,7 +78,8 @@
       else {
         if (file = pdf.files[0]) {
         document.getElementById("process_status").style.color = "black";
-        document.getElementById('process_status').innerHTML = "Processing...";
+        document.getElementById('process_status').innerHTML = "Processing... For better performance, stay on this tab.";
+        updatePercent(0);
         
 
         fileReader = new FileReader();
@@ -93,9 +97,8 @@
                 
               //console.log(i);
                 //convertPage(pdf.getPage(i));
-              if(pdf.numPages > 50) {
-                document.getElementById('wait_time').innerHTML = "This file is large, so cropping may take little extra time...";
-              }
+              updatePercent(20);
+              percent_increment = 80 / pdf.numPages;
               var page_promise = 1;
               var prom_list = [];
               for(var i = 1; i <= pdf.numPages; i++) {
@@ -107,7 +110,7 @@
                 o_pdf = new jsPDF();
                 document.getElementById("process_status").style.color = "black";
                 document.getElementById('process_status').innerHTML = "Done."
-                document.getElementById('wait_time').innerHTML = "";
+                percent_obj.innerHTML = "";
 
               })
 
@@ -177,6 +180,9 @@
         o_pdf.addImage(imgCrop, 'JPEG', 0, 0);
       
         console.log("page saved");
+        console.log(percent_increment);
+        updatePercent(percent_increment);
+
       });
     }
 
@@ -222,6 +228,16 @@
 
     function noError() {
        document.getElementById('process_status').innerHTML = "";
+    }
+
+    function updatePercent(inc) {
+      if(loading_percent < 100) {
+        loading_percent += inc;
+      }
+
+      percent_obj.innerHTML = Math.round(loading_percent) + "%";
+      console.log(percent_obj.innerHTML);
+
     }
   </script>
   
