@@ -1,4 +1,4 @@
-<html>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/processing.js/1.4.1/processing-api.min.js"></script><html>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/1.4.1/jspdf.debug.js" integrity="sha384-THVO/sM0mFD9h7dfSndI6TS0PgAGavwKvB5hAxRRvc0o9cPLohB0wb/PTA7LdUHs" crossorigin="anonymous"></script>
 
 <!--
@@ -48,6 +48,8 @@
     var percent_obj = document.getElementById('wait_time');
 
     document.getElementById('redact_button').onclick = function() {
+      loading_percent = 0;
+
       inches = document.getElementById('inches_input').value;
       if(Number(inches)) {
         inches = Number(inches);
@@ -97,12 +99,19 @@
                 
               //console.log(i);
                 //convertPage(pdf.getPage(i));
-              updatePercent(20);
-              percent_increment = 80 / pdf.numPages;
+              percent_increment = 100 / pdf.numPages;
               var page_promise = 1;
               var prom_list = [];
+              var prom_chain;
+
+              //prom_list.push(new Promise((resolve, reject) => {resolve(loadPage(pdf, 1))})); 
+
               for(var i = 1; i <= pdf.numPages; i++) {
-                prom_list.push(new Promise((resolve, reject) => {resolve(loadPage(pdf, i))}));
+                console.log("start");
+
+                page_promise = loadPage(pdf,i,page_promise);
+                prom_list.push(new Promise((resolve, reject) => {resolve(page_promise)})); 
+                
               }
               Promise.all(prom_list).then(function() {
                 console.log("downloading");
@@ -138,14 +147,15 @@
 
 
 
-    async function loadPage(pdf, i) {
-     
-    if(i > 1) {
-      o_pdf.addPage();
-    }
-    return pdf.getPage(i).then(function(page) {
-        return (new Promise((resolve, reject) => {resolve(convertPage(page, i))}));
-      });
+    async function loadPage(pdf, i, prom) {
+
+      await prom;
+      if(i > 1) {
+        o_pdf.addPage();
+      }
+      return pdf.getPage(i).then(function(page) {
+          return (new Promise((resolve, reject) => {resolve(convertPage(page, i))}));
+        });
       
       
     }
@@ -201,7 +211,17 @@
       return retCanvas.toDataURL();
     }
 
-        function pdfError() {
+    async function returnProm(prom1, prom2) {
+      await prom1;
+
+      return prom2;
+    }
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    function pdfError() {
       document.getElementById("process_status").style.color = "red";
       document.getElementById('process_status').innerHTML = "Error: not a PDF.";
     }
@@ -215,6 +235,7 @@
       document.getElementById("process_status").style.color = "red";
       document.getElementById('process_status').innerHTML = "Error: number must be greater than or equal to 0.";
     }
+
 
     function upperBoundError() {
       document.getElementById("process_status").style.color = "red";
