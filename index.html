@@ -40,7 +40,7 @@
     // Asynchronous download PDF as an ArrayBuffer
     //
     var pdf = document.getElementById('pdf');
-    var o_pdf = new jsPDF();
+    var o_pdf = new jsPDF("p", "mm", "a4" );
     var inches = 1;
     var save_name;
     var loading_percent = 0;
@@ -161,7 +161,7 @@
     }
 
     function convertPage(page, i) {
-      var scale = 1.3;
+      var scale = 2;
       //var viewport = page.getViewport(canvas.width / page.getViewport(1.0).width);
       var viewport = page.getViewport(scale);
       //
@@ -187,7 +187,7 @@
         var imgCrop = new Image();
         imgCrop.src = getImagePortion(canvas, canvas.width, canvas.height, 0, (canvas.height * (inches/11)), 1);
         o_pdf.setPage(i);
-        o_pdf.addImage(imgCrop, 'JPEG', 0, 0);
+        o_pdf.addImage(imgCrop, 'JPEG', 0,0, 210, 297);
       
         console.log("page saved");
         console.log(percent_increment);
