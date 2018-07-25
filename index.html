@@ -27,7 +27,17 @@
     <p class="wait_time" id="wait_time"></p>
   </div>
 
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
   <script type="text/javascript" src="pdf.js"></script>
+  <script type="text/javascript"> 
+    $(document).ready(function(){
+      $(document).keypress(function(e){
+        if (e.which == 13){
+          $("#redact_button").click();
+        }
+      });
+    });
+  </script>
   <script type="text/javascript">
 
     //
@@ -46,8 +56,20 @@
     var loading_percent = 0;
     var percent_increment = 0;
     var percent_obj = document.getElementById('wait_time');
+    var staged = false;
+
+    document.getElementById('pdf').onclick = function() {
+      document.getElementById('pdf').blur();
+    }
 
     document.getElementById('redact_button').onclick = function() {
+      document.getElementById('redact_button').blur();
+      if(staged) {
+        console.log("downloading");
+        o_pdf.save(save_name);
+        o_pdf = new jsPDF();
+        return;
+      }
       loading_percent = 0;
 
       inches = document.getElementById('inches_input').value;
@@ -114,11 +136,12 @@
                 
               }
               Promise.all(prom_list).then(function() {
-                console.log("downloading");
-                o_pdf.save(save_name);
-                o_pdf = new jsPDF();
+                
+
+                document.getElementById('redact_button').value = "Download";
+                staged = true;
                 document.getElementById("process_status").style.color = "black";
-                document.getElementById('process_status').innerHTML = "Done."
+                document.getElementById('process_status').innerHTML = "Done. Refresh the page to crop another file."
                 percent_obj.innerHTML = "";
 
               })
