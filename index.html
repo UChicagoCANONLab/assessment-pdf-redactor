@@ -36,6 +36,9 @@
           $("#redact_button").click();
         }
       });
+      $(function() {
+        $("form").submit(function() { return false; });
+      });
     });
   </script>
   <script type="text/javascript">
@@ -50,13 +53,14 @@
     // Asynchronous download PDF as an ArrayBuffer
     //
     var pdf = document.getElementById('pdf');
-    var o_pdf = new jsPDF("p", "mm", "a4" );
-    var inches = 1;
-    var save_name;
-    var loading_percent = 0;
-    var percent_increment = 0;
     var percent_obj = document.getElementById('wait_time');
-    var staged = false;
+    var o_pdf = new jsPDF("p", "mm", "a4" );
+
+    var INCHES = 1;
+    var SAVE_NAME;
+    var LOADING_PERCENT = 0;
+    var PERCENT_INCREMENT = 0;
+    var STAGED = false;
 
     document.getElementById('pdf').onclick = function() {
       document.getElementById('pdf').blur();
@@ -64,97 +68,87 @@
 
     document.getElementById('redact_button').onclick = function() {
       document.getElementById('redact_button').blur();
-      if(staged) {
+      if(STAGED) {
         console.log("downloading");
-        o_pdf.save(save_name);
+        o_pdf.save(SAVE_NAME);
         o_pdf = new jsPDF();
         return;
       }
-      loading_percent = 0;
+      
+      LOADING_PERCENT = 0;
 
-      inches = document.getElementById('inches_input').value;
-      if(Number(inches)) {
-        inches = Number(inches);
+      INCHES = document.getElementById('inches_input').value;
+      if(Number(INCHES)) {
+        INCHES = Number(INCHES);
       }
-      else if(inches == "" || !inches) {
-        inches = 1;
+      else if(INCHES == "" || !INCHES) {
+        INCHES = 1;
       }
       else {
-        inches = NaN;
+        INCHES = NaN;
       }
 
       if(!pdf.files[0]) {
         fileError();
+        return;
       }
-      else if(['application/pdf'].indexOf(pdf.files[0].type) == -1) {
-        console.log("what");
+      if(['application/pdf'].indexOf(pdf.files[0].type) == -1) {
         pdfError();
+        return;
       }
-      else if(!inches) {
+      if(!INCHES) {
         numberError();
+        return;
       }
-      else if(inches < 0) {
+      if(INCHES < 0) {
         lowerBoundError();
+        return;
       }
-      else if(inches > 11) {
+      if(INCHES > 11) {
         upperBoundError();
+        return;
       }
-      else {
-        if (file = pdf.files[0]) {
-        document.getElementById("process_status").style.color = "black";
-        document.getElementById('process_status').innerHTML = "Processing... For better performance, stay on this tab.";
-        updatePercent(0);
-        
 
-        fileReader = new FileReader();
+      file = pdf.files[0] 
+      document.getElementById("process_status").style.color = "black";
+      document.getElementById('process_status').innerHTML = "Processing... For better performance, stay on this tab.";
+      updatePercent(0);
+      
 
-        fileReader.onload = function(ev) {
-          save_name = "CROPPED_" + pdf.files[0].name;
+      fileReader = new FileReader();
 
-            console.log(ev);
-            PDFJS.getDocument(fileReader.result).then(function getPdfHelloWorld(pdf) {
-              //
-              // Fetch the first page
-              //
-              console.log(pdf)
-              // these are  happening concurrently
-                
-              //console.log(i);
-                //convertPage(pdf.getPage(i));
-              percent_increment = 100 / pdf.numPages;
-              var page_promise = 1;
-              var prom_list = [];
-              var prom_chain;
+      fileReader.onload = function(ev) {
+        SAVE_NAME = "CROPPED_" + pdf.files[0].name;
 
-              //prom_list.push(new Promise((resolve, reject) => {resolve(loadPage(pdf, 1))})); 
+        console.log(ev);
+        PDFJS.getDocument(fileReader.result).then(function getPdfHelloWorld(pdf) {
+          
+          console.log(pdf)
+         
+          PERCENT_INCREMENT = 100 / pdf.numPages;
+          var page_promise = 1;
+          var prom_list = [];
+          var prom_chain;
 
-              for(var i = 1; i <= pdf.numPages; i++) {
-                console.log("start");
+          for(var i = 1; i <= pdf.numPages; i++) {
+            console.log("start");
+            page_promise = loadPage(pdf,i,page_promise);
+            prom_list.push(new Promise((resolve, reject) => {resolve(page_promise)})); 
+            
+          }
+          Promise.all(prom_list).then(function() {
+          
+            document.getElementById('redact_button').value = "Download";
+            STAGED = true;
+            document.getElementById("process_status").style.color = "black";
+            document.getElementById('process_status').innerHTML = 'Done. Please refresh the page to crop another file.'
+            percent_obj.innerHTML = "";
 
-                page_promise = loadPage(pdf,i,page_promise);
-                prom_list.push(new Promise((resolve, reject) => {resolve(page_promise)})); 
-                
-              }
-              Promise.all(prom_list).then(function() {
-                
+          })
 
-                document.getElementById('redact_button').value = "Download";
-                staged = true;
-                document.getElementById("process_status").style.color = "black";
-                document.getElementById('process_status').innerHTML = "Done. Refresh the page to crop another file."
-                percent_obj.innerHTML = "";
-
-              })
-
-            });
-          };
-          fileReader.readAsArrayBuffer(file);
-
-        }
-        else {
-          document.getElementById('process_status').innerHTML = "Error: invalid file.";
-        }
-      }
+        });
+        };
+        fileReader.readAsArrayBuffer(file);
 
     };
 
@@ -208,13 +202,13 @@
         var imgData = canvas.toDataURL("image/jpeg", 1.0);
 
         var imgCrop = new Image();
-        imgCrop.src = getImagePortion(canvas, canvas.width, canvas.height, 0, (canvas.height * (inches/11)), 1);
+        imgCrop.src = getImagePortion(canvas, canvas.width, canvas.height, 0, (canvas.height * (INCHES/11)), 1);
         o_pdf.setPage(i);
         o_pdf.addImage(imgCrop, 'JPEG', 0,0, 210, 297);
       
         console.log("page saved");
-        console.log(percent_increment);
-        updatePercent(percent_increment);
+        console.log(PERCENT_INCREMENT);
+        updatePercent(PERCENT_INCREMENT);
 
       });
     }
@@ -232,16 +226,6 @@
 
       retContext.drawImage(bufferCanvas, startX,startY,newWidth * ratio, newHeight * ratio,0,0,newWidth,newHeight);
       return retCanvas.toDataURL();
-    }
-
-    async function returnProm(prom1, prom2) {
-      await prom1;
-
-      return prom2;
-    }
-
-    function sleep(ms) {
-      return new Promise(resolve => setTimeout(resolve, ms));
     }
 
     function pdfError() {
@@ -275,13 +259,12 @@
     }
 
     function updatePercent(inc) {
-      if(loading_percent < 100) {
-        loading_percent += inc;
+      if(LOADING_PERCENT < 100) {
+        LOADING_PERCENT += inc;
       }
 
-      percent_obj.innerHTML = Math.round(loading_percent) + "%";
+      percent_obj.innerHTML = Math.round(LOADING_PERCENT) + "%";
       console.log(percent_obj.innerHTML);
-
     }
   </script>
   
