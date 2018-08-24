@@ -104,7 +104,8 @@ document.getElementById('redact_button').onclick = function() {
 
 };
 
-/* Load page, return promise to crop page. */
+/* Load page, return promise to crop page. 
+   Ensures that page processing is sequential. */
 async function loadPage(pdf, i, prom) {
 
   await prom;
