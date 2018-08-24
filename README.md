@@ -28,4 +28,4 @@ chopcraft@uchicago.edu
 
 ## Acknowledgments
 
-Made for the CANON Lab's Scratch Encore project.
+Created for the CANON Lab's Scratch Encore project.
